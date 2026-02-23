@@ -1,0 +1,378 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Wave to Earth Experience</title>
+  <script src="https://unpkg.com/ml5@0.12.2/dist/ml5.min.js"></script>
+  <style>
+    /* --- 1. Variables & Global Styles --- */
+    :root {
+      --blue: #5a7d9a;
+      --bg: #fdfbfb;
+      --glass: rgba(255, 255, 255, 0.85);
+      --dark-bg: #1a1a2e;
+      --transition-slow: 1.5s ease;
+      --transition-fast: 0.3s ease;
+    }
+
+    html, body {
+      scroll-behavior: smooth;
+      overflow: hidden; 
+    }
+
+    body {
+      font-family: 'Georgia', serif;
+      background: var(--bg);
+      transition: background var(--transition-slow);
+      margin: 0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      min-height: 200vh;
+      overflow-x: hidden;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    /* --- 2. Screens & Layout --- */
+    #welcome-screen {
+      width: 100%;
+      height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      background: inherit;
+      z-index: 1000;
+    }
+
+    #main-experience {
+      width: 100%;
+      height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+    }
+
+    /* --- 3. Components (Card & Inputs) --- */
+    .card {
+      background: var(--glass);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      padding: 45px 35px;
+      border-radius: 30px;
+      border: 1px solid rgba(255, 255, 255, 0.4);
+      box-shadow: 0 20px 50px rgba(0, 0, 0, 0.06);
+      width: 85%;
+      max-width: 380px;
+      text-align: center;
+      z-index: 10;
+    }
+
+    input {
+      width: 90%;
+      padding: 16px;
+      border: 1px solid rgba(0, 0, 0, 0.08);
+      border-radius: 20px;
+      margin-bottom: 20px;
+      background: white;
+      outline: none;
+      text-align: center;
+      font-size: 16px !important;
+    }
+
+    #status {
+      font-size: 0.6rem;
+      color: var(--blue);
+      margin-bottom: 25px;
+      font-weight: bold;
+      letter-spacing: 2px;
+      opacity: 0.6;
+    }
+
+    /* --- 4. Buttons --- */
+    .start-btn {
+      background: transparent;
+      border: 1px solid var(--blue);
+      color: var(--blue);
+      padding: 15px 40px;
+      border-radius: 30px;
+      cursor: pointer;
+      font-size: 0.9rem;
+      letter-spacing: 4px;
+      transition: var(--transition-fast);
+      margin-top: 20px;
+    }
+
+    .start-btn.ready {
+      opacity: 1;
+      pointer-events: auto;
+    }
+
+    .start-btn:hover {
+      background: var(--blue);
+      color: white;
+    }
+
+    #predictBtn {
+      background: var(--blue);
+      color: white;
+      border: none;
+      padding: 16px;
+      border-radius: 20px;
+      cursor: pointer;
+      font-weight: bold;
+      width: 100%;
+      transition: 0.4s;
+      box-shadow: 0 8px 20px rgba(90, 125, 154, 0.3);
+      letter-spacing: 1px;
+    }
+
+    #predictBtn:active { transform: scale(0.96); }
+
+    /* --- Music Disk Button --- */
+    #music-control {
+      position: fixed;
+      bottom: 30px;
+      right: 30px;
+      width: 50px;
+      height: 50px;
+      background: #333;
+      border-radius: 50%;
+      display: none; 
+      justify-content: center;
+      align-items: center;
+      cursor: pointer;
+      z-index: 2000;
+      box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+      border: 2px solid #fff;
+      overflow: hidden;
+    }
+
+    .disk-inner {
+      width: 100%;
+      height: 100%;
+      background: repeating-radial-gradient(#222, #333 10%, #222 15%);
+      border-radius: 50%;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      animation: rotate-disk 4s linear infinite;
+      animation-play-state: paused;
+    }
+
+    .disk-inner::after {
+      content: '';
+      width: 12px;
+      height: 12px;
+      background: var(--blue);
+      border-radius: 50%;
+      border: 2px solid white;
+    }
+
+    @keyframes rotate-disk {
+      from { transform: rotate(0deg); }
+      to { transform: rotate(360deg); }
+    }
+
+    /* --- 5. Typography & Effects --- */
+    #text { font-style: italic; color: #333; font-size: 1.2rem; line-height: 1.8; letter-spacing: 0.5px; }
+    .song-title { font-weight: bold; color: var(--blue); display: block; margin-top: 25px; font-size: 0.75rem; letter-spacing: 4px; opacity: 0; transition: var(--transition-slow); }
+    .glow-text { color: var(--blue) !important; text-shadow: 0 0 10px rgba(90, 125, 154, 0.5); font-weight: bold; animation: pulse-glow 2s infinite; }
+    .night-sky { position: fixed; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 0; display: none; }
+    .shooting-star { position: absolute; width: 2px; height: 2px; background: white; border-radius: 50%; animation: shoot 3s linear infinite; opacity: 0; }
+    .dot { position: absolute; width: 6px; height: 6px; background: var(--blue); border-radius: 50%; opacity: 0.1; animation: float 15s infinite; z-index: -1; }
+    .waves-container { position: fixed; bottom: 0; width: 100%; height: 100px; z-index: 1; pointer-events: none; }
+    .parallax > use { animation: move-forever 20s linear infinite; }
+
+    /* --- 6. Dark Mode States --- */
+    body.dark-mode { background-color: var(--dark-bg) !important; color: #e0e0e0; }
+    body.dark-mode .night-sky { display: block; }
+    body.dark-mode .card { background: rgba(25, 25, 35, 0.8) !important; }
+    body.dark-mode #text { color: #d1d1d1; }
+    body.dark-mode input { background: #252535; color: white; }
+
+    /* --- 7. Keyframes --- */
+    @keyframes shoot { 0% { transform: rotate(315deg) translateX(0); opacity: 1; } 100% { transform: rotate(315deg) translateX(-1000px); opacity: 0; } }
+    @keyframes pulse-glow { 0%, 100% { opacity: 1; } 50% { opacity: 0.7; } }
+    @keyframes move-forever { 0% { transform: translate3d(-90px, 0, 0); } 100% { transform: translate3d(85px, 0, 0); } }
+    @keyframes float { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-80vh); } }
+  </style>
+</head>
+<body>
+
+<audio id="mainAudio" loop prelaod="auto"></audio>
+
+<div id="music-control" onclick="toggleMusic()">
+  <div class="disk-inner" id="disk-visual"></div>
+</div>
+
+<div id="welcome-screen">
+  <h2 id="welcome-title" style="color: var(--blue); font-weight: normal; letter-spacing: 5px;">WAVE TO EARTH</h2>
+  <button id="mainStartBtn" class="start-btn" onclick="startExperience()">OPEN</button>
+</div>
+
+<div id="main-experience">
+    <div class="night-sky" id="nightSky"></div>
+    <div class="dot" style="left: 15%; animation-delay: 0s;"></div>
+    <div class="dot" style="left: 85%; animation-delay: 4s;"></div>
+
+    <div class="card">
+      <div id="status">🌊 CONNECTING TO THE SEA...</div>
+      <h3 style="color: var(--blue); margin-top: 0; font-weight: normal; letter-spacing: 1px;">How's your heart?</h3>
+      <input type="text" id="userInput" placeholder="Ceritakan perasaanmu...">
+      <button id="predictBtn" onclick="handlePrediction()">Find My Lyrics 🌊</button>
+      <div id="lyric-result">
+        <div id="text">"Your seasons will guide you here..."</div>
+        <div id="title" class="song-title">WAVE TO EARTH</div>
+      </div>
+    </div>
+</div>
+
+<div class="waves-container">
+  <svg class="waves" xmlns="http://www.w3.org/2000/svg" viewBox="0 24 150 28" preserveAspectRatio="none">
+    <defs><path id="gentle-wave" d="M-160 44c30 0 58-18 88-18s 58 18 88 18 58-18 88-18 58 18 88 18 v44h-352z"/></defs>
+    <g class="parallax"><use id="wave-color" xlink:href="#gentle-wave" x="48" y="7" fill="#5a7d9a"/></g>
+  </svg>
+</div>
+
+<script>
+  if ('scrollRestoration' in history) { history.scrollRestoration = 'manual'; }
+  window.scrollTo(0, 0);
+
+  const audioPlayer = document.getElementById('mainAudio');
+  const diskVisual = document.getElementById('disk-visual');
+  const musicControl = document.getElementById('music-control');
+  
+  let currentMusicFile = 'music/seasons.mp3'; // Musik default awal
+
+  function startExperience() {
+      audioPlayer.src = currentMusicFile;
+      audioPlayer.play().catch(e => console.log("User interaction needed"));
+      
+      document.body.style.overflow = "auto";
+      document.documentElement.style.overflow = "auto";
+      musicControl.style.display = 'flex';
+      diskVisual.style.animationPlayState = 'running';
+      
+      window.scrollTo({ top: window.innerHeight, behavior: 'smooth' });
+  }
+
+  function toggleMusic() {
+    if (audioPlayer.paused) {
+      audioPlayer.play();
+      diskVisual.style.animationPlayState = 'running';
+    } else {
+      audioPlayer.pause();
+      diskVisual.style.animationPlayState = 'paused';
+    }
+  }
+
+  function changeSong(fileName) {
+    const newPath = 'music/' + fileName + '.mp3';
+    if (audioPlayer.getAttribute('src') !== newPath) {
+      audioPlayer.src = newPath;
+      audioPlayer.play();
+      diskVisual.style.animationPlayState = 'running';
+    }
+  }
+
+  // --- LIBRARY MENGGUNAKAN NAMA FILE MP3 ---
+  const waveLibrary = {
+    excited: { text: "“My heart is painting pink, when I'm with you.”", title: "PINK", color: "#fff0f3", music: "pink" },
+    romantic: { text: "“I’ll give you my all, my seasons. Just like the sun.”", title: "SEASONS", color: "#fff9f0", music: "seasons" },
+    sweet: { text: "“You’re my daisy, the only one I’ve been looking for.”", title: "DAISY.", color: "#f0fff4", music: "daisy" },
+    mellow: { text: "“Even if the world turns its back on us, I’ll be by your side.”", title: "BAD", color: "#f5f5f7", music: "bad" },
+    deep: { text: "“I'm your tiny summer, you're my giant wave.”", title: "WAVE", color: "#f0f7ff", music: "wave" },
+    healing: { text: "“It's okay to be slow, we're just walking through our light.”", title: "LIGHT", color: "#fdfbfb", music: "light" },
+    gloomy: { text: "“I’m just a surf, crashing on your shore.”", title: "SURF.", color: "#eceff1", music: "surf" },
+    dreamy: { text: "“Let’s go see the stars, and the moon, and the sun.”", title: "SUNBURN", color: "#fffbe6", music: "sunburn" },
+    missing: { text: "“I'm still waiting for you, in the place where we used to be.”", title: "HOMESICK", color: "#f2f2f2", music: "homesick" },
+    pure: { text: "“You are the most beautiful thing in my world.”", title: "PEACH EYES", color: "#fff5f5", music: "peacheyes" },
+    peaceful: { text: "“Walking on the bridge, the evening glow is so sweet.”", title: "EVENING GLOW", color: "#fff0e6", music: "eveningglow" },
+    elegant: { text: "“You're like a calla, the most beautiful flower.”", title: "CALLA", color: "#f9fcf9", music: "calla" },
+    hopeless: { text: "“Love is so difficult for me, but I'm still in love.”", title: "LOVE", color: "#fff0f0", music: "love" },
+    chill: { text: "“I just want to be with you, like a nouvelle vague.”", title: "NOUVELLE VAGUE", color: "#e6f2ff", music: "nouvellevague" },
+    warm: { text: "“I’ll be your summer, I’ll be your warmth.”", title: "SUMMER FLOWS", color: "#fff8e1", music: "summerflows" },
+    starry: { text: "“Counting stars with you, in this small room.”", title: "RIDE", color: "#e8eaf6", music: "ride" },
+    courage: { text: "“I'll be your home, I'll be your world. Just come to me.”", title: "ANNIE", color: "#f3f0ff", music: "annie" },
+    nostalgic: { text: "“We're just like a dried flower, fading away but still beautiful.”", title: "DRIED FLOWER", color: "#fdf5e6", music: "driedflower" },
+    obsessed: { text: "“I'll be your ocean, I'll be your everything.”", title: "OCEAN FLOOR", color: "#e0f2f1", music: "oceanfloor" },
+    lonely: { text: "“I am a bird, flying through the gray sky alone.”", title: "BIRD", color: "#f7f7f7", music: "bird" }
+  };
+
+  let sentiment; let modelReady = false; let typewriterTimeout;
+  try { sentiment = ml5.sentiment('movieReviews', () => { modelReady = true; document.getElementById('status').innerText = "VIBES SYNCED"; }); } catch (e) { }
+
+  function typeWriter(text, elementId, speed) {
+    const element = document.getElementById(elementId);
+    clearTimeout(typewriterTimeout); element.innerHTML = ""; let i = 0;
+    function type() { if (i < text.length) { element.innerHTML = text.slice(0, i + 1); i++; typewriterTimeout = setTimeout(type, speed); } }
+    type();
+  }
+
+  function handlePrediction() {
+    const input = document.getElementById('userInput').value.toLowerCase();
+    const textDisplay = document.getElementById('text');
+    if (!input) return;
+    textDisplay.classList.remove('glow-text');
+    let res;
+    if (input.includes("earth") || input.includes("wave") || input.includes("indra")) {
+      document.body.style.backgroundColor = "#e0f7fa";
+      textDisplay.classList.add('glow-text');
+      typeWriter("“You are the center of my small world, my dearest wave.”", "text", 50);
+      updateTitle("OUR STORY");
+      changeSong('seasons');
+      return;
+    }
+    if (input.match(/tidur|ngantuk|sleep|rehat/)) res = waveLibrary.peaceful;
+    else if (input.match(/senang|happy|pink|bahagia/)) res = waveLibrary.excited;
+    else if (input.match(/kangen|rindu|missing/)) res = waveLibrary.missing;
+    else if (input.match(/capek|lelah|healing|tenang/)) res = waveLibrary.healing;
+    else if (input.match(/sayang|cinta|love|seasons/)) res = waveLibrary.romantic;
+    else if (input.match(/sedih|galau|surf/)) res = waveLibrary.gloomy;
+    else if (input.match(/cantik|indah|daisy/)) res = waveLibrary.sweet;
+    else if (modelReady) {
+      const p = sentiment.predict(input);
+      res = p.score > 0.7 ? waveLibrary.romantic : (p.score > 0.4 ? waveLibrary.mellow : waveLibrary.gloomy);
+    } else { res = waveLibrary.mellow; }
+    
+    const hour = new Date().getHours();
+    document.body.style.backgroundColor = (hour >= 21 || hour < 5) ? "#1a1a2e" : res.color;
+    typeWriter(res.text, "text", 50);
+    updateTitle(res.title);
+    if(res.music) changeSong(res.music);
+  }
+
+  function updateTitle(titleText) {
+    const titleDisp = document.getElementById('title');
+    titleDisp.style.opacity = 0;
+    setTimeout(() => { titleDisp.innerText = "— " + titleText; titleDisp.style.opacity = 1; }, 1200);
+  }
+
+  function applyNightMode() {
+    const hour = new Date().getHours();
+    if (hour >= 21 || hour < 5) {
+      document.body.classList.add('dark-mode');
+      setInterval(createShootingStar, 4000);
+      const wave = document.getElementById('wave-color');
+      if(wave) wave.setAttribute('fill', '#2d4a63');
+    }
+  }
+
+  function createShootingStar() {
+    const nightSky = document.getElementById('nightSky');
+    const star = document.createElement('div');
+    star.className = 'shooting-star';
+    star.style.top = Math.random() * 50 + '%';
+    star.style.left = Math.random() * 100 + '%';
+    star.style.animationDuration = (Math.random() * 2 + 2) + 's';
+    nightSky.appendChild(star);
+    setTimeout(() => star.remove(), 4000);
+  }
+
+  applyNightMode();
+</script>
+</body>
+</html>
