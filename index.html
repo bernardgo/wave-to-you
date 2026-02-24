@@ -558,19 +558,19 @@
       }
 
       // Categorized Keywords
-      if (input.match(/tidur|ngantuk|sleep|rehat/))      	res = waveLibrary.peaceful;
-      else if (input.match(/senang|happy|pink|bahagia|baik/)) 	res = waveLibrary.excited;
-      else if (input.match(/kangen|rindu|missing/))      	res = waveLibrary.missing;
-      else if (input.match(/capek|lelah|healing/))       	res = waveLibrary.healing;
-      else if (input.match(/sayang|cinta|love|seasons/)) 	res = waveLibrary.romantic;
-      else if (input.match(/sedih|galau|surf/))          	res = waveLibrary.gloomy;
-      else if (input.match(/cantik|indah|daisy/))        	res = waveLibrary.sweet;
-      else if (input.match(/panas|hot|gerah/))           	res = waveLibrary.warm;
-      else if (input.match(/malam|night|ride/))          	res = waveLibrary.starry;
-      else if (input.match(/sendiri|sepi|alone|lonely/)) 	res = waveLibrary.lonely;
-      else if (input.match(/laper|lapar/))               	res = waveLibrary.hungry;
-      else if (input.match(/tenang|chill/))              	res = waveLibrary.chill;
-      else if (input.match(/takut|scared|scare/))              	res = waveLibrary.courage;
+      if (input.match(/tidur|ngantuk|sleep|rehat/))      		res = waveLibrary.peaceful;
+      else if (input.match(/senang|happy|pink|bahagia|baik/)) 		res = waveLibrary.excited;
+      else if (input.match(/kangen|rindu|missing/))      		res = waveLibrary.missing;
+      else if (input.match(/capek|lelah|healing/))       		res = waveLibrary.healing;
+      else if (input.match(/sayang|cinta|love|seasons/)) 		res = waveLibrary.romantic;
+      else if (input.match(/sedih|galau|surf/))          		res = waveLibrary.gloomy;
+      else if (input.match(/cantik|indah|daisy/))        		res = waveLibrary.sweet;
+      else if (input.match(/panas|hot|gerah/))           		res = waveLibrary.warm;
+      else if (input.match(/malam|night|ride/))          		res = waveLibrary.starry;
+      else if (input.match(/sendiri|sepi|alone|lonely/)) 		res = waveLibrary.lonely;
+      else if (input.match(/laper|lapar/))               		res = waveLibrary.hungry;
+      else if (input.match(/tenang|chill/))              		res = waveLibrary.chill;
+      else if (input.match(/rumah|home|pulang|takut|scare|scared/))	res = waveLibrary.courage;
       else if (modelReady) {
         const p = sentiment.predict(input);
         res = p.score > 0.7 ? waveLibrary.romantic : (p.score > 0.4 ? waveLibrary.mellow : waveLibrary.gloomy);
