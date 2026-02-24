@@ -570,6 +570,7 @@
       else if (input.match(/sendiri|sepi|alone|lonely/)) 	res = waveLibrary.lonely;
       else if (input.match(/laper|lapar/))               	res = waveLibrary.hungry;
       else if (input.match(/tenang|chill/))              	res = waveLibrary.chill;
+      else if (input.match(/takut|scared|scare/))              	res = waveLibrary.courage;
       else if (modelReady) {
         const p = sentiment.predict(input);
         res = p.score > 0.7 ? waveLibrary.romantic : (p.score > 0.4 ? waveLibrary.mellow : waveLibrary.gloomy);
