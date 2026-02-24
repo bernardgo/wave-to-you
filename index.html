@@ -268,6 +268,14 @@
 
   function startExperience() {
       audioPlayer.src = currentMusicFile;
+      audioPlayer.volume = 0;
+      let fadeIn = setInterval(() => {
+        if (audioPlayer.volume < 0.4) {
+           audioPlayer.volume += 0.05;
+        } else {
+           clearInterval(fadeIn);
+        }
+      }, 100);
       updateDiskText("SEASONS");
       audioPlayer.play().catch(e => console.log("User interaction needed"));
       
@@ -293,6 +301,14 @@
     const newPath = 'music/' + fileName + '.mp3';
     if (audioPlayer.getAttribute('src') !== newPath) {
       audioPlayer.src = newPath;
+      audioPlayer.volume = 0;
+      let fadeIn = setInterval(() => {
+        if (audioPlayer.volume < 0.4) {
+          audioPlayer.volume += 0.05;
+        } else {
+          clearInterval(fadeIn);
+        }
+      }, 100);
       audioPlayer.play();
       diskVisual.style.animationPlayState = 'running';
     }
@@ -353,6 +369,9 @@
     else if (input.match(/sayang|cinta|love|seasons/)) res = waveLibrary.romantic;
     else if (input.match(/sedih|galau|surf/)) res = waveLibrary.gloomy;
     else if (input.match(/cantik|indah|daisy/)) res = waveLibrary.sweet;
+    else if (input.match(/panas|hot|gerah/)) res = waveLibrary.warm;
+    else if (input.match(/malam|night|ride/)) res = waveLibrary.starry;
+    else if (input.match(/sendiri|sepi|alone|lonely/)) res = waveLibrary.lonely;
     else if (modelReady) {
       const p = sentiment.predict(input);
       res = p.score > 0.7 ? waveLibrary.romantic : (p.score > 0.4 ? waveLibrary.mellow : waveLibrary.gloomy);
@@ -393,10 +412,10 @@
     setTimeout(() => star.remove(), 4000);
   }
 
-function updateDiskText(title) {
+  function updateDiskText(title) {
     const diskText = document.getElementById('disk-song-name');
     diskText.textContent = `${title} - WAVE TO EARTH - ${title} - `;
-}
+  }
 
   applyNightMode();
 </script>
